@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Busca TCE-CE</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">Dados Abertos SIM</p>
+        <h1>Busca TCE-CE</h1>
+      </div>
+      <div class="header-status" id="apiStatus">Pronto</div>
+    </header>
+
+    <main class="app-shell">
+      <section class="filters-panel" aria-label="Filtros de consulta">
+        <div class="module-tabs" role="tablist" aria-label="Area de busca">
+          <button class="module-tab active" type="button" data-module="contracts">Contratos</button>
+          <button class="module-tab" type="button" data-module="expenses">Despesas</button>
+          <button class="module-tab" type="button" data-module="works">Obras</button>
+          <button class="module-tab" type="button" data-module="payroll">Folha</button>
+        </div>
+
+        <div class="field-group">
+          <label for="municipality">Municipio</label>
+          <select id="municipality">
+            <option value="">Todos</option>
+          </select>
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group date-range">
+            <label for="startDate">Inicio</label>
+            <input id="startDate" type="date" />
+          </div>
+          <div class="field-group date-range">
+            <label for="endDate">Fim</label>
+            <input id="endDate" type="date" />
+          </div>
+        </div>
+
+        <div class="field-grid module-only module-expenses">
+          <div class="field-group">
+            <label for="fiscalYear">Exercicio</label>
+            <input id="fiscalYear" type="number" min="2008" max="2099" step="1" />
+          </div>
+          <div class="field-group">
+            <label for="referenceMonth">Referencia inicio</label>
+            <input id="referenceMonth" type="month" />
+          </div>
+        </div>
+
+        <div class="field-group module-only module-expenses">
+          <label for="referenceEndMonth">Referencia fim</label>
+          <input id="referenceEndMonth" type="month" />
+        </div>
+
+        <div class="field-grid module-only module-works">
+          <div class="field-group">
+            <label for="worksYear">Exercicio</label>
+            <input id="worksYear" type="number" min="2008" max="2099" step="1" />
+          </div>
+        </div>
+
+        <div class="field-grid module-only module-payroll">
+          <div class="field-group">
+            <label for="payrollYear">Exercicio</label>
+            <input id="payrollYear" type="number" min="2008" max="2099" step="1" />
+          </div>
+          <div class="field-group">
+            <label for="payrollReferenceMonth">Referencia inicio</label>
+            <input id="payrollReferenceMonth" type="month" />
+          </div>
+        </div>
+
+        <div class="field-group module-only module-payroll">
+          <label for="payrollReferenceEndMonth">Referencia fim</label>
+          <input id="payrollReferenceEndMonth" type="month" />
+        </div>
+
+        <div class="field-group module-only module-expenses">
+          <label for="expenseEndpoint">Documento</label>
+          <select id="expenseEndpoint">
+            <option value="notas_empenhos">Notas de empenhos</option>
+            <option value="notas_pagamentos">Notas de pagamentos</option>
+            <option value="liquidacoes">Liquidacoes</option>
+            <option value="notas_fiscais">Notas fiscais</option>
+            <option value="itens_notas_fiscais">Itens de notas fiscais</option>
+          </select>
+        </div>
+
+        <div class="field-grid module-only module-expenses">
+          <div class="field-group">
+            <label for="creditorDocument">CNPJ/CPF credor</label>
+            <input id="creditorDocument" type="search" inputmode="numeric" placeholder="Somente numeros" />
+          </div>
+          <div class="field-group">
+            <label for="expenseNumber">Nº pagamento/empenho</label>
+            <input id="expenseNumber" type="search" placeholder="Ex.: 10010004" />
+          </div>
+        </div>
+
+        <div class="field-group module-only module-expenses">
+          <label for="creditorName">Nome do credor</label>
+          <input id="creditorName" type="search" placeholder="Razao social ou nome" />
+        </div>
+
+        <div class="field-group module-only module-works">
+          <label for="worksEndpoint">Documento</label>
+          <select id="worksEndpoint">
+            <option value="obras_municipais_servicos_engenharia">Obras e servicos</option>
+            <option value="medicoes_obras_municipio">Medicoes</option>
+            <option value="status_obras_servico_engenharia">Status</option>
+          </select>
+        </div>
+
+        <div class="field-group module-only module-payroll">
+          <label for="payrollEndpoint">Documento</label>
+          <select id="payrollEndpoint">
+            <option value="folhas_pagamentos">Resumo da folha</option>
+            <option value="agentes_publicos_folha">Servidores na folha</option>
+            <option value="agentes_publicos_municipais">Cadastro de servidores</option>
+            <option value="notas_pagamentos_folhas">Pagamentos de folhas</option>
+            <option value="liquidacoes_folha">Liquidacoes de folha</option>
+            <option value="liquidacoes_inss">Liquidacoes de INSS</option>
+          </select>
+        </div>
+
+        <div class="field-grid module-only module-payroll">
+          <div class="field-group">
+            <label for="payrollCompetenceMonth">Competencia inicio</label>
+            <input id="payrollCompetenceMonth" type="month" />
+          </div>
+          <div class="field-group">
+            <label for="payrollCompetenceEndMonth">Competencia fim</label>
+            <input id="payrollCompetenceEndMonth" type="month" />
+          </div>
+        </div>
+
+        <div class="field-group module-only module-payroll">
+            <label for="payrollType">Tipo folha</label>
+            <input id="payrollType" type="search" placeholder="Ex.: AN" />
+        </div>
+
+        <div class="field-grid module-only module-payroll">
+          <div class="field-group">
+            <label for="payrollAgency">Orgao/Secretaria</label>
+            <input id="payrollAgency" type="search" placeholder="Codigo ou nome" />
+          </div>
+          <div class="field-group">
+            <label for="payrollUnit">Unidade</label>
+            <input id="payrollUnit" type="search" placeholder="Codigo ou nome" />
+          </div>
+        </div>
+
+        <div class="field-grid module-only module-payroll">
+          <div class="field-group">
+            <label for="payrollBond">Vinculo</label>
+            <input id="payrollBond" type="search" placeholder="Codigo do vinculo" />
+          </div>
+          <div class="field-group">
+            <label for="payrollServerDocument">CPF servidor</label>
+            <input id="payrollServerDocument" type="search" inputmode="numeric" placeholder="Somente numeros" />
+          </div>
+        </div>
+
+        <div class="field-group module-only module-payroll">
+          <label for="payrollServerName">Nome do servidor</label>
+          <input id="payrollServerName" type="search" placeholder="Nome do agente publico" />
+        </div>
+
+        <div class="field-group">
+          <label for="textSearch">Buscar nos resultados</label>
+          <input id="textSearch" type="search" placeholder="Objeto, numero, fornecedor..." />
+        </div>
+
+        <div class="field-grid">
+          <div class="field-group">
+            <label for="pageSize">Registros</label>
+            <select id="pageSize">
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+              <option value="250">250</option>
+              <option value="500">500</option>
+              <option value="1000">1000</option>
+              <option value="all" selected>Todos</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="startIndex">Inicio</label>
+            <input id="startIndex" type="number" min="0" step="1" value="0" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="primary-button" id="searchButton" type="button">Buscar</button>
+          <button class="icon-button" id="resetButton" type="button" title="Limpar filtros" aria-label="Limpar filtros">Limpar</button>
+        </div>
+      </section>
+
+      <section class="results-panel" aria-label="Resultados">
+        <div class="results-toolbar">
+          <div>
+            <p class="eyebrow" id="moduleLabel">Contratos</p>
+            <h2 id="resultsTitle">Resultados</h2>
+          </div>
+          <div class="toolbar-actions">
+            <button class="secondary-button" id="exportButton" type="button" disabled>CSV</button>
+            <button class="secondary-button" id="previousButton" type="button" disabled>Anterior</button>
+            <button class="secondary-button" id="nextButton" type="button" disabled>Proxima</button>
+          </div>
+        </div>
+
+        <div class="summary-row" id="summaryRow">
+          <span>Sem consulta ativa</span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody">
+              <tr>
+                <td class="empty-state">Selecione os filtros e execute uma busca.</td>
+              </tr>
+            </tbody>
+            <tfoot id="tableFoot"></tfoot>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="detailDialog">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">Registro</p>
+          <h2 id="detailTitle">Detalhes</h2>
+        </div>
+        <button class="icon-button" id="closeDialog" type="button" aria-label="Fechar">Fechar</button>
+      </div>
+      <div class="details-grid" id="detailContent"></div>
+    </dialog>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
