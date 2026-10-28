@@ -548,3 +548,105 @@ body[data-module="payroll"] .date-range {
     font-size: 24px;
   }
 }
+
+/* ======================================================================
+ * Relatorio para impressao / PDF. #printReport fica fora da tela normal
+ * e so aparece quando o navegador esta imprimindo (window.print(), usado
+ * pelo botao "PDF" - o usuario escolhe "Salvar como PDF" no proprio
+ * dialogo do navegador). Fonte Arial porque e a fonte real instalada no
+ * Windows do usuario; nao da para embutir Arial num PDF gerado por
+ * biblioteca sem redistribuir o arquivo da fonte, que e comercial.
+ * ====================================================================== */
+#printReport {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  body > *:not(#printReport) {
+    display: none !important;
+  }
+
+  body,
+  #printReport {
+    display: block;
+    background: #ffffff;
+    color: #111111;
+    font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
+  }
+
+  #printReport .print-app {
+    margin: 0 0 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #333333;
+  }
+
+  #printReport h1 {
+    margin: 0 0 6px;
+    font-size: 18px;
+  }
+
+  #printReport .print-filtros,
+  #printReport .print-meta {
+    margin: 2px 0;
+    font-size: 10px;
+    color: #333333;
+  }
+
+  #printReport .print-filtros {
+    border-top: 1px solid #999999;
+    padding-top: 6px;
+    margin-top: 6px;
+  }
+
+  table.print-table {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+    font-size: 10px;
+  }
+
+  table.print-table th,
+  table.print-table td {
+    border: 1px solid #999999;
+    padding: 3px 6px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  table.print-table th {
+    background: #e8e8e8;
+  }
+
+  table.print-table td.num,
+  table.print-table th.num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  table.print-table tfoot td {
+    font-weight: 700;
+    background: #eeeeee;
+  }
+
+  table.print-table thead {
+    display: table-header-group;
+  }
+
+  table.print-table tr {
+    break-inside: avoid;
+  }
+
+  #printReport .print-footer {
+    margin-top: 10px;
+    padding-top: 4px;
+    border-top: 1px solid #999999;
+    font-size: 9px;
+    color: #555555;
+  }
+}

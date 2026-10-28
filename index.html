@@ -210,6 +210,9 @@
           </div>
           <div class="toolbar-actions">
             <button class="secondary-button" id="exportButton" type="button" disabled>CSV</button>
+            <button class="secondary-button" id="pdfButton" type="button" disabled title="Abre o dialogo de impressao do navegador; escolha 'Salvar como PDF'">PDF</button>
+            <button class="secondary-button" id="docxButton" type="button" disabled>Word</button>
+            <button class="secondary-button" id="xlsxButton" type="button" disabled title="A fonte da planilha segue o padrao do seu Excel, nao Arial">Excel</button>
             <button class="secondary-button" id="previousButton" type="button" disabled>Anterior</button>
             <button class="secondary-button" id="nextButton" type="button" disabled>Proxima</button>
           </div>
@@ -244,6 +247,11 @@
       <div class="details-grid" id="detailContent"></div>
     </dialog>
 
+    <div id="printReport" aria-hidden="true"></div>
+
+    <script src="./vendor/jszip.min.js"></script>
+    <script src="./vendor/xlsx.full.min.js"></script>
     <script src="./app.js"></script>
+    <script src="./js/reports.js"></script>
   </body>
 </html>
