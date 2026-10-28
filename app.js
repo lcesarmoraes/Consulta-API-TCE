@@ -325,7 +325,6 @@ const el = {
   municipality: document.querySelector("#municipality"),
   startDate: document.querySelector("#startDate"),
   endDate: document.querySelector("#endDate"),
-  contractsYear: document.querySelector("#contractsYear"),
   fiscalYear: document.querySelector("#fiscalYear"),
   referenceMonth: document.querySelector("#referenceMonth"),
   referenceEndMonth: document.querySelector("#referenceEndMonth"),
@@ -546,8 +545,6 @@ function buildUrl(startIndex = Number(el.startIndex.value || 0), countOverride =
   if (el.municipality.value) url.searchParams.set("codigo_municipio", el.municipality.value);
 
   if (state.module === "contracts") {
-    const year = normalizeYear(el.contractsYear.value);
-    if (year) url.searchParams.set("exercicio_orcamento", year);
     if (el.startDate.value) url.searchParams.set("data_inicio", el.startDate.value);
     if (el.endDate.value) url.searchParams.set("data_fim", el.endDate.value);
   }
@@ -1247,9 +1244,6 @@ function getSourceName(row) {
 }
 
 function validateSearch() {
-  if (state.module === "contracts") {
-    if (!el.contractsYear.value) return "Informe o exercicio para consultar contratos.";
-  }
   if (state.module === "expenses") {
     if (!el.municipality.value) return "Informe o municipio para consultar despesas.";
     if (!el.fiscalYear.value) return "Informe o exercicio para consultar despesas.";
@@ -1860,7 +1854,6 @@ function resetFilters() {
   el.municipality.value = "";
   el.startDate.value = "";
   el.endDate.value = "";
-  el.contractsYear.value = "";
   el.fiscalYear.value = "";
   el.referenceMonth.value = "";
   el.referenceEndMonth.value = "";

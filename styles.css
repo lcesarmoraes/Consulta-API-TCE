@@ -496,7 +496,6 @@ dialog::backdrop {
   display: none;
 }
 
-body[data-module="contracts"] .module-contracts,
 body[data-module="expenses"] .module-expenses,
 body[data-module="works"] .module-works,
 body[data-module="payroll"] .module-payroll {
