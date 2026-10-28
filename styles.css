@@ -100,7 +100,7 @@ select {
 
 .module-tabs {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   padding: 4px;
   border-radius: 8px;
@@ -223,6 +223,70 @@ select:focus {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.report-columns {
+  border-bottom: 1px solid var(--border);
+  padding: 10px 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.report-columns summary {
+  cursor: pointer;
+  font-weight: 700;
+  list-style: none;
+}
+
+.report-columns summary::-webkit-details-marker {
+  display: none;
+}
+
+.report-columns summary::before {
+  content: "\25B8";
+  display: inline-block;
+  margin-right: 6px;
+  transition: transform 0.15s ease;
+}
+
+.report-columns[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.report-columns-actions {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 8px;
+}
+
+.report-columns-actions .icon-button {
+  min-height: 28px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.report-columns-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 4px 12px;
+}
+
+.report-column-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 0;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.report-column-item input {
+  width: auto;
+  min-height: 0;
+  margin: 0;
 }
 
 .summary-row {

@@ -63,11 +63,46 @@
     return `tce-ce-${endpoint}-${new Date().toISOString().slice(0, 10)}`;
   }
 
+  /** Le a lista de caixas de selecao de colunas. null = nenhuma marcada,
+   * ou seja, usar todas as colunas (comportamento padrao). */
+  function getSelectedColumnKeys() {
+    const container = document.getElementById("reportColumnsList");
+    if (!container) return null;
+    const checked = [...container.querySelectorAll("input[type=checkbox]:checked")].map((input) => input.dataset.key);
+    return checked.length ? new Set(checked) : null;
+  }
+
+  /** Reconstroi a lista de caixas de selecao com as colunas do modulo/busca
+   * atual. Chamada sempre que os botoes de exportacao mudam de estado
+   * (mesmo observador usado para habilitar/desabilitar os botoes), entao
+   * acompanha automaticamente trocas de aba e novas buscas. */
+  function populateColumnChecklist() {
+    const container = document.getElementById("reportColumnsList");
+    if (!container) return;
+    container.innerHTML = "";
+    getColumns().forEach(([key, label]) => {
+      const item = document.createElement("label");
+      item.className = "report-column-item";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.dataset.key = key;
+      item.appendChild(input);
+      item.appendChild(document.createTextNode(label));
+      container.appendChild(item);
+    });
+  }
+
   /** Monta o modelo de dados do relatorio a partir do que esta na tela
-   * agora (mesmas colunas e mesmas linhas filtradas que o usuario ve). */
+   * agora (mesmas colunas e mesmas linhas filtradas que o usuario ve),
+   * restrito as colunas marcadas na lista de selecao, se houver alguma. */
   function buildModel() {
     const mod = modules[state.module];
-    const columnDefs = getColumns();
+    let columnDefs = getColumns();
+    const selecionadas = getSelectedColumnKeys();
+    if (selecionadas) {
+      const filtradas = columnDefs.filter(([key]) => selecionadas.has(key));
+      if (filtradas.length) columnDefs = filtradas;
+    }
     const numericFlags = columnDefs.map(([key]) => NUM_RE.test(key));
     return {
       appTitle: "Busca TCE-CE",
@@ -343,6 +378,7 @@
       const btn = document.getElementById(id);
       if (btn) btn.disabled = disabled;
     });
+    populateColumnChecklist();
   }
 
   function wire() {
@@ -353,8 +389,17 @@
     pdfBtn.addEventListener("click", exportPdf);
     docxBtn.addEventListener("click", exportDocx);
     xlsxBtn.addEventListener("click", exportXlsx);
+    const allBtn = document.getElementById("reportColumnsAll");
+    const noneBtn = document.getElementById("reportColumnsNone");
+    if (allBtn) allBtn.addEventListener("click", () => {
+      document.querySelectorAll("#reportColumnsList input[type=checkbox]").forEach((input) => (input.checked = true));
+    });
+    if (noneBtn) noneBtn.addEventListener("click", () => {
+      document.querySelectorAll("#reportColumnsList input[type=checkbox]").forEach((input) => (input.checked = false));
+    });
     // Acompanha o botao de CSV (ja mantido pelo app.js) para habilitar/desabilitar junto,
-    // sem precisar duplicar logica de estado em varios lugares do app.js.
+    // sem precisar duplicar logica de estado em varios lugares do app.js. A mesma troca
+    // (nova busca, troca de aba) tambem e o gatilho certo para refazer a lista de colunas.
     new MutationObserver(syncReportButtons).observe(el.exportButton, { attributes: true, attributeFilter: ["disabled"] });
     syncReportButtons();
   }
