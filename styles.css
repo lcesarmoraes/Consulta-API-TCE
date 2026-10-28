@@ -100,7 +100,7 @@ select {
 
 .module-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   padding: 4px;
   border-radius: 8px;
@@ -498,12 +498,14 @@ dialog::backdrop {
 
 body[data-module="expenses"] .module-expenses,
 body[data-module="works"] .module-works,
-body[data-module="payroll"] .module-payroll {
+body[data-module="payroll"] .module-payroll,
+body[data-module="revenues"] .module-revenues {
   display: grid;
 }
 
 body[data-module="expenses"] .date-range,
-body[data-module="payroll"] .date-range {
+body[data-module="payroll"] .date-range,
+body[data-module="revenues"] .date-range {
   display: none;
 }
 

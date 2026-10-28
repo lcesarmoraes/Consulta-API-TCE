@@ -283,6 +283,21 @@ const modules = {
       ["valor_resultado", "Valor"],
     ],
   },
+  revenues: {
+    label: "Receitas",
+    title: "Receitas encontradas",
+    columns: [
+      ["numero_talao_receita", "Talao"],
+      ["data_talao_receita", "Data"],
+      ["codigo_rubrica", "Rubrica"],
+      ["codigo_fonte", "Fonte"],
+      ["valor_receita", "Valor"],
+      ["nome_razao_contribuinte", "Contribuinte"],
+      ["numero_doc_contribuinte", "CNPJ/CPF"],
+      ["historico_receita", "Historico"],
+      ["data_referencia_doc", "Referencia"],
+    ],
+  },
 };
 
 const endpointLabels = {
@@ -300,6 +315,10 @@ const endpointLabels = {
   notas_pagamentos_folhas: "Pagamentos de folhas",
   liquidacoes_folha: "Liquidacoes de folha",
   liquidacoes_inss: "Liquidacoes de INSS",
+  taloes_receitas_orcamentarias: "Receita orcamentaria",
+  anulacoes_taloes_receitas_orcamentarias: "Anulacao de receita orcamentaria",
+  taloes_receitas_extras_orcamentarias: "Receita extraorcamentaria",
+  anulacoes_taloes_receitas_extras_orcamentarias: "Anulacao de receita extraorcamentaria",
 };
 
 const state = {
@@ -343,6 +362,12 @@ const el = {
   payrollBond: document.querySelector("#payrollBond"),
   payrollServerDocument: document.querySelector("#payrollServerDocument"),
   payrollServerName: document.querySelector("#payrollServerName"),
+  revenueYear: document.querySelector("#revenueYear"),
+  revenueReferenceMonth: document.querySelector("#revenueReferenceMonth"),
+  revenueReferenceEndMonth: document.querySelector("#revenueReferenceEndMonth"),
+  revenueAgency: document.querySelector("#revenueAgency"),
+  revenueUnit: document.querySelector("#revenueUnit"),
+  revenueEndpoint: document.querySelector("#revenueEndpoint"),
   expenseEndpoint: document.querySelector("#expenseEndpoint"),
   worksEndpoint: document.querySelector("#worksEndpoint"),
   payrollEndpoint: document.querySelector("#payrollEndpoint"),
@@ -462,6 +487,10 @@ function getExpenseReferenceMonths() {
   return getMonthRange(el.referenceMonth.value, el.referenceEndMonth.value);
 }
 
+function getRevenueReferenceMonths() {
+  return getMonthRange(el.revenueReferenceMonth.value, el.revenueReferenceEndMonth.value);
+}
+
 function getPayrollCompetenceMonths() {
   if (!el.payrollCompetenceMonth.value) return [];
   return getMonthRange(el.payrollCompetenceMonth.value, el.payrollCompetenceEndMonth.value || el.payrollCompetenceMonth.value);
@@ -488,6 +517,7 @@ function getActiveEndpoint() {
   if (state.module === "expenses") return el.expenseEndpoint.value;
   if (state.module === "works") return el.worksEndpoint.value;
   if (state.module === "payroll") return el.payrollEndpoint.value;
+  if (state.module === "revenues") return el.revenueEndpoint.value;
   return modules[state.module].endpoint;
 }
 
@@ -498,7 +528,7 @@ function getApiEndpoint() {
 }
 
 function getColumns() {
-  if (state.module !== "expenses" && state.module !== "works" && state.module !== "payroll") {
+  if (state.module !== "expenses" && state.module !== "works" && state.module !== "payroll" && state.module !== "revenues") {
     return modules[state.module].columns;
   }
   const first = state.filteredRows[0] || state.rows[0] || {};
@@ -507,7 +537,9 @@ function getColumns() {
       ? modules.expenses.columns
       : state.module === "works"
         ? modules.works.columns
-        : getPayrollColumns();
+        : state.module === "revenues"
+          ? modules.revenues.columns
+          : getPayrollColumns();
   const existing = preferred.filter(([key]) => key in first);
   if (state.module === "expenses") return preferred;
   if (state.module === "payroll" && existing.length >= 4) return existing;
@@ -583,6 +615,15 @@ function buildUrl(startIndex = Number(el.startIndex.value || 0), countOverride =
     }
   }
 
+  if (state.module === "revenues") {
+    const year = normalizeYear(el.revenueYear.value);
+    const reference = overrides.revenueReference || monthToReference(el.revenueReferenceMonth.value);
+    if (year) url.searchParams.set("exercicio_orcamento", year);
+    if (reference) url.searchParams.set("data_referencia_doc", reference);
+    if (el.revenueAgency.value.trim()) url.searchParams.set("codigo_orgao", el.revenueAgency.value.trim());
+    if (el.revenueUnit.value.trim()) url.searchParams.set("codigo_unidade_orcamentaria", el.revenueUnit.value.trim());
+  }
+
   return url;
 }
 
@@ -637,9 +678,11 @@ async function runSearch(startIndex = Number(el.startIndex.value || 0)) {
     const result =
       state.module === "payroll"
         ? await fetchPayrollRangeRows(startIndex, fetchAllPages)
-        : state.module === "expenses"
-          ? await fetchExpenseRangeRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch)
-          : await fetchSingleSearchRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch);
+        : state.module === "revenues"
+          ? await fetchRevenueRangeRows(startIndex, fetchAllPages)
+          : state.module === "expenses"
+            ? await fetchExpenseRangeRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch)
+            : await fetchSingleSearchRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch);
     const data = result.data;
     state.lastData = data;
     let rows = result.rows;
@@ -736,6 +779,40 @@ async function fetchPayrollRangeRows(startIndex, fetchAllPages) {
     let rows = (data.elements || []).map(normalizeRow);
     if (fetchAllPages) {
       rows = await fetchAllRows(rows, data, startIndex, API_PAGE_LIMIT, { payrollReference: reference });
+    } else {
+      anyNext = anyNext || hasNextPage(data);
+    }
+    allRows.push(...rows);
+  }
+
+  return {
+    data: {
+      ...(firstData || { elements: [], links: [] }),
+      elements: allRows,
+      links: anyNext ? [{ rel: "next" }] : [],
+      rangeReferences: references,
+    },
+    rows: allRows,
+  };
+}
+
+async function fetchRevenueRangeRows(startIndex, fetchAllPages) {
+  const referenceMonths = getRevenueReferenceMonths();
+  const references = referenceMonths.length
+    ? referenceMonths.map(monthToReference)
+    : [monthToReference(el.revenueReferenceMonth.value)].filter(Boolean);
+  const allRows = [];
+  let firstData = null;
+  let anyNext = false;
+
+  for (const reference of references) {
+    setStatus(`Buscando ${displayValue(reference, "data_referencia_doc")}`);
+    const url = buildUrl(startIndex, fetchAllPages ? String(API_PAGE_LIMIT) : "", { revenueReference: reference });
+    const data = await fetchJson(url);
+    if (!firstData) firstData = data;
+    let rows = (data.elements || []).map(normalizeRow);
+    if (fetchAllPages) {
+      rows = await fetchAllRows(rows, data, startIndex, API_PAGE_LIMIT, { revenueReference: reference });
     } else {
       anyNext = anyNext || hasNextPage(data);
     }
@@ -1269,6 +1346,12 @@ function validateSearch() {
     if (el.payrollCompetenceMonth.value && !getPayrollCompetenceMonths().length) {
       return "Informe um intervalo de competencia valido.";
     }
+  }
+  if (state.module === "revenues") {
+    if (!el.municipality.value) return "Informe o municipio para consultar receitas.";
+    if (!el.revenueYear.value) return "Informe o exercicio para consultar receitas.";
+    if (!el.revenueReferenceMonth.value) return "Informe a referencia inicial para consultar receitas.";
+    if (!getRevenueReferenceMonths().length) return "Informe um intervalo de referencia valido.";
   }
   return "";
 }
@@ -1879,6 +1962,11 @@ function resetFilters() {
   el.payrollBond.value = "";
   el.payrollServerDocument.value = "";
   el.payrollServerName.value = "";
+  el.revenueYear.value = "";
+  el.revenueReferenceMonth.value = "";
+  el.revenueReferenceEndMonth.value = "";
+  el.revenueAgency.value = "";
+  el.revenueUnit.value = "";
   el.textSearch.value = "";
   el.pageSize.value = "all";
   el.startIndex.value = "0";

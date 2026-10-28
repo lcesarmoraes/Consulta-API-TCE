@@ -22,6 +22,7 @@
           <button class="module-tab" type="button" data-module="expenses">Despesas</button>
           <button class="module-tab" type="button" data-module="works">Obras</button>
           <button class="module-tab" type="button" data-module="payroll">Folha</button>
+          <button class="module-tab" type="button" data-module="revenues">Receitas</button>
         </div>
 
         <div class="field-group">
@@ -79,6 +80,43 @@
         <div class="field-group module-only module-payroll">
           <label for="payrollReferenceEndMonth">Referencia fim</label>
           <input id="payrollReferenceEndMonth" type="month" />
+        </div>
+
+        <div class="field-grid module-only module-revenues">
+          <div class="field-group">
+            <label for="revenueYear">Exercicio</label>
+            <input id="revenueYear" type="number" min="2008" max="2099" step="1" />
+          </div>
+          <div class="field-group">
+            <label for="revenueReferenceMonth">Referencia inicio</label>
+            <input id="revenueReferenceMonth" type="month" />
+          </div>
+        </div>
+
+        <div class="field-group module-only module-revenues">
+          <label for="revenueReferenceEndMonth">Referencia fim</label>
+          <input id="revenueReferenceEndMonth" type="month" />
+        </div>
+
+        <div class="field-group module-only module-revenues">
+          <label for="revenueEndpoint">Documento</label>
+          <select id="revenueEndpoint">
+            <option value="taloes_receitas_orcamentarias">Receita orcamentaria</option>
+            <option value="anulacoes_taloes_receitas_orcamentarias">Anulacao de receita orcamentaria</option>
+            <option value="taloes_receitas_extras_orcamentarias">Receita extraorcamentaria</option>
+            <option value="anulacoes_taloes_receitas_extras_orcamentarias">Anulacao de receita extraorcamentaria</option>
+          </select>
+        </div>
+
+        <div class="field-grid module-only module-revenues">
+          <div class="field-group">
+            <label for="revenueAgency">Orgao</label>
+            <input id="revenueAgency" type="search" placeholder="Codigo do orgao" />
+          </div>
+          <div class="field-group">
+            <label for="revenueUnit">Unidade</label>
+            <input id="revenueUnit" type="search" placeholder="Codigo da unidade" />
+          </div>
         </div>
 
         <div class="field-group module-only module-expenses">
