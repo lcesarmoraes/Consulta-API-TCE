@@ -417,6 +417,13 @@ function monthToReference(month) {
   return `${year}${value}`;
 }
 
+function toApiDate(value) {
+  // A API (DV_CONTRATOS / DV_OBRAS) rejeita o formato ISO "aaaa-mm-dd" que
+  // o <input type="date"> sempre produz, com "Error parsing date ...".
+  // Ela espera o formato compacto "aaaammdd", sem separadores.
+  return value ? value.replaceAll("-", "") : "";
+}
+
 function referenceToMonth(reference) {
   const value = String(reference || "");
   return /^\d{6}$/.test(value) ? `${value.slice(0, 4)}-${value.slice(4, 6)}` : "";
@@ -545,8 +552,8 @@ function buildUrl(startIndex = Number(el.startIndex.value || 0), countOverride =
   if (el.municipality.value) url.searchParams.set("codigo_municipio", el.municipality.value);
 
   if (state.module === "contracts") {
-    if (el.startDate.value) url.searchParams.set("data_inicio", el.startDate.value);
-    if (el.endDate.value) url.searchParams.set("data_fim", el.endDate.value);
+    if (el.startDate.value) url.searchParams.set("data_inicio", toApiDate(el.startDate.value));
+    if (el.endDate.value) url.searchParams.set("data_fim", toApiDate(el.endDate.value));
   }
 
   if (state.module === "expenses") {
@@ -559,8 +566,8 @@ function buildUrl(startIndex = Number(el.startIndex.value || 0), countOverride =
   if (state.module === "works") {
     const year = normalizeYear(el.worksYear.value);
     if (year) url.searchParams.set("exercicio_orcamento", year);
-    if (el.startDate.value) url.searchParams.set("data_inicio", el.startDate.value);
-    if (el.endDate.value) url.searchParams.set("data_fim", el.endDate.value);
+    if (el.startDate.value) url.searchParams.set("data_inicio", toApiDate(el.startDate.value));
+    if (el.endDate.value) url.searchParams.set("data_fim", toApiDate(el.endDate.value));
   }
 
   if (state.module === "payroll") {
