@@ -652,8 +652,12 @@ function buildUrl(startIndex = Number(el.startIndex.value || 0), countOverride =
   }
 
   if (state.module === "bids") {
-    if (el.startDate.value) url.searchParams.set("data_inicio", toApiDate(el.startDate.value));
-    if (el.endDate.value) url.searchParams.set("data_fim", toApiDate(el.endDate.value));
+    // Formato de data varia por documento dentro da mesma categoria (ja
+    // confirmado: a maioria aceita AAAAMMDD, mas "Licitantes e fornecedores"
+    // exige AAAA-MM-DD). overrides.isoDates alterna entre os dois; quem
+    // decide qual usar e fetchBidsRows, tentando um e depois o outro.
+    if (el.startDate.value) url.searchParams.set("data_inicio", overrides.isoDates ? el.startDate.value : toApiDate(el.startDate.value));
+    if (el.endDate.value) url.searchParams.set("data_fim", overrides.isoDates ? el.endDate.value : toApiDate(el.endDate.value));
   }
 
   return url;
@@ -662,7 +666,17 @@ function buildUrl(startIndex = Number(el.startIndex.value || 0), countOverride =
 async function fetchJson(url) {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    let detail = "";
+    try {
+      const body = await response.json();
+      detail = (body && body.__errors__ && body.__errors__[0] && body.__errors__[0].message) || "";
+    } catch (parseError) {
+      // corpo do erro nao veio em JSON; segue sem detalhe extra
+    }
+    const error = new Error(`HTTP ${response.status}${detail ? `: ${detail}` : ""}`);
+    error.status = response.status;
+    error.detail = detail;
+    throw error;
   }
   return response.json();
 }
@@ -712,9 +726,11 @@ async function runSearch(startIndex = Number(el.startIndex.value || 0)) {
         ? await fetchPayrollRangeRows(startIndex, fetchAllPages)
         : state.module === "revenues"
           ? await fetchRevenueRangeRows(startIndex, fetchAllPages)
-          : state.module === "expenses"
-            ? await fetchExpenseRangeRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch)
-            : await fetchSingleSearchRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch);
+          : state.module === "bids"
+            ? await fetchBidsRows(startIndex, fetchAllPages)
+            : state.module === "expenses"
+              ? await fetchExpenseRangeRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch)
+              : await fetchSingleSearchRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch);
     const data = result.data;
     state.lastData = data;
     let rows = result.rows;
@@ -750,6 +766,33 @@ async function fetchSingleSearchRows(url, startIndex, fetchAllPages, useExpanded
     rows = await fetchExpandedExpenseRows(rows, data, API_PAGE_LIMIT);
   }
   return { data, rows };
+}
+
+function isDateFormatError(error) {
+  return /pattern|localdate|parsing date/i.test((error && (error.detail || error.message)) || "");
+}
+
+/** Licitacoes: cada documento da categoria pode exigir um formato de data
+ * diferente (confirmado: a maioria usa AAAAMMDD, "Licitantes e fornecedores"
+ * usa AAAA-MM-DD). Tenta o formato compacto primeiro; se a API reclamar
+ * especificamente de formato de data, tenta de novo com ISO antes de
+ * desistir - cobre tambem os documentos ainda nao testados manualmente. */
+async function fetchBidsRows(startIndex, fetchAllPages) {
+  const tentativas = [{ isoDates: false }, { isoDates: true }];
+  let ultimoErro = null;
+  for (const overrides of tentativas) {
+    const url = buildUrl(startIndex, fetchAllPages ? String(API_PAGE_LIMIT) : "", overrides);
+    try {
+      const data = await fetchJson(url);
+      let rows = (data.elements || []).map(normalizeRow);
+      if (fetchAllPages) rows = await fetchAllRows(rows, data, startIndex, API_PAGE_LIMIT, overrides);
+      return { data, rows };
+    } catch (error) {
+      ultimoErro = error;
+      if (!isDateFormatError(error)) throw error;
+    }
+  }
+  throw ultimoErro;
 }
 
 async function fetchExpenseRangeRows(url, startIndex, fetchAllPages, useExpandedExpenseSearch) {
