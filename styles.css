@@ -563,7 +563,8 @@ dialog::backdrop {
 body[data-module="expenses"] .module-expenses,
 body[data-module="works"] .module-works,
 body[data-module="payroll"] .module-payroll,
-body[data-module="revenues"] .module-revenues {
+body[data-module="revenues"] .module-revenues,
+body[data-module="bids"] .module-bids {
   display: grid;
 }
 

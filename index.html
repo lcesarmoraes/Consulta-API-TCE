@@ -23,6 +23,7 @@
           <button class="module-tab" type="button" data-module="works">Obras</button>
           <button class="module-tab" type="button" data-module="payroll">Folha</button>
           <button class="module-tab" type="button" data-module="revenues">Receitas</button>
+          <button class="module-tab" type="button" data-module="bids">Licitacoes</button>
         </div>
 
         <div class="field-group">
@@ -114,6 +115,19 @@
             <label for="revenueUnit">Unidade</label>
             <input id="revenueUnit" type="search" placeholder="Codigo da unidade" />
           </div>
+        </div>
+
+        <div class="field-group module-only module-bids">
+          <label for="bidsEndpoint">Documento</label>
+          <select id="bidsEndpoint">
+            <option value="processos_administrativos_contratacoes">Processo licitatorio</option>
+            <option value="publicacoes_processos_administrativos_contratacoes">Publicacoes</option>
+            <option value="licitantes_fornecedores_bens_servicos">Licitantes e fornecedores</option>
+            <option value="itens_compoem_bens_servicos">Itens</option>
+            <option value="dotacoes_utilizadas_contratacoes">Dotacoes utilizadas</option>
+            <option value="identificacao_responsaveis_contratacao">Responsaveis</option>
+            <option value="tipos_responsaveis_contratacao">Tipos de responsavel</option>
+          </select>
         </div>
 
         <div class="field-group module-only module-expenses">

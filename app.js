@@ -298,6 +298,21 @@ const modules = {
       ["data_referencia_doc", "Referencia"],
     ],
   },
+  bids: {
+    label: "Licitacoes",
+    title: "Processos licitatorios encontrados",
+    columns: [
+      ["numero_licitacao", "Licitacao"],
+      ["data_realizacao_autuacao_licitacao", "Data"],
+      ["modalidade_licitacao", "Modalidade"],
+      ["tipo_licitacao", "Tipo"],
+      ["descricao_objeto_licitacao", "Objeto"],
+      ["valor_orcado_estimado", "Valor estimado"],
+      ["nome_responsavel_homologacao", "Responsavel"],
+      ["data_homologacao", "Homologacao"],
+      ["data_referencia_doc", "Referencia"],
+    ],
+  },
 };
 
 const endpointLabels = {
@@ -319,6 +334,13 @@ const endpointLabels = {
   anulacoes_taloes_receitas_orcamentarias: "Anulacao de receita orcamentaria",
   taloes_receitas_extras_orcamentarias: "Receita extraorcamentaria",
   anulacoes_taloes_receitas_extras_orcamentarias: "Anulacao de receita extraorcamentaria",
+  processos_administrativos_contratacoes: "Processo licitatorio",
+  publicacoes_processos_administrativos_contratacoes: "Publicacoes",
+  licitantes_fornecedores_bens_servicos: "Licitantes e fornecedores",
+  itens_compoem_bens_servicos: "Itens",
+  dotacoes_utilizadas_contratacoes: "Dotacoes utilizadas",
+  identificacao_responsaveis_contratacao: "Responsaveis",
+  tipos_responsaveis_contratacao: "Tipos de responsavel",
 };
 
 const state = {
@@ -368,6 +390,7 @@ const el = {
   revenueAgency: document.querySelector("#revenueAgency"),
   revenueUnit: document.querySelector("#revenueUnit"),
   revenueEndpoint: document.querySelector("#revenueEndpoint"),
+  bidsEndpoint: document.querySelector("#bidsEndpoint"),
   expenseEndpoint: document.querySelector("#expenseEndpoint"),
   worksEndpoint: document.querySelector("#worksEndpoint"),
   payrollEndpoint: document.querySelector("#payrollEndpoint"),
@@ -518,6 +541,7 @@ function getActiveEndpoint() {
   if (state.module === "works") return el.worksEndpoint.value;
   if (state.module === "payroll") return el.payrollEndpoint.value;
   if (state.module === "revenues") return el.revenueEndpoint.value;
+  if (state.module === "bids") return el.bidsEndpoint.value;
   return modules[state.module].endpoint;
 }
 
@@ -528,7 +552,8 @@ function getApiEndpoint() {
 }
 
 function getColumns() {
-  if (state.module !== "expenses" && state.module !== "works" && state.module !== "payroll" && state.module !== "revenues") {
+  const adaptiveModules = ["expenses", "works", "payroll", "revenues", "bids"];
+  if (!adaptiveModules.includes(state.module)) {
     return modules[state.module].columns;
   }
   const first = state.filteredRows[0] || state.rows[0] || {};
@@ -539,7 +564,9 @@ function getColumns() {
         ? modules.works.columns
         : state.module === "revenues"
           ? modules.revenues.columns
-          : getPayrollColumns();
+          : state.module === "bids"
+            ? modules.bids.columns
+            : getPayrollColumns();
   const existing = preferred.filter(([key]) => key in first);
   if (state.module === "expenses") return preferred;
   if (state.module === "payroll" && existing.length >= 4) return existing;
@@ -622,6 +649,11 @@ function buildUrl(startIndex = Number(el.startIndex.value || 0), countOverride =
     if (reference) url.searchParams.set("data_referencia_doc", reference);
     if (el.revenueAgency.value.trim()) url.searchParams.set("codigo_orgao", el.revenueAgency.value.trim());
     if (el.revenueUnit.value.trim()) url.searchParams.set("codigo_unidade_orcamentaria", el.revenueUnit.value.trim());
+  }
+
+  if (state.module === "bids") {
+    if (el.startDate.value) url.searchParams.set("data_inicio", toApiDate(el.startDate.value));
+    if (el.endDate.value) url.searchParams.set("data_fim", toApiDate(el.endDate.value));
   }
 
   return url;
@@ -1352,6 +1384,10 @@ function validateSearch() {
     if (!el.revenueYear.value) return "Informe o exercicio para consultar receitas.";
     if (!el.revenueReferenceMonth.value) return "Informe a referencia inicial para consultar receitas.";
     if (!getRevenueReferenceMonths().length) return "Informe um intervalo de referencia valido.";
+  }
+  if (state.module === "bids") {
+    if (!el.municipality.value) return "Informe o municipio para consultar licitacoes.";
+    if (!el.startDate.value || !el.endDate.value) return "Informe inicio e fim para consultar licitacoes.";
   }
   return "";
 }
