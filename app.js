@@ -1882,9 +1882,17 @@ function renderTableRows(columns) {
     for (const [key] of columns) {
       const cell = document.createElement("td");
       const value = rowData[key];
-      cell.textContent = displayValue(value, key);
+      const text = displayValue(value, key);
+      if (/objeto|historico|descricao/i.test(key)) {
+        const clamp = document.createElement("div");
+        clamp.className = "clamp";
+        clamp.textContent = text;
+        cell.title = text;
+        cell.append(clamp);
+      } else {
+        cell.textContent = text;
+      }
       if (/valor|preco|total|saldo|quantidade/i.test(key)) cell.classList.add("numeric");
-      if (/objeto|historico|descricao/i.test(key)) cell.classList.add("clamp");
       row.append(cell);
     }
     el.tableBody.append(row);
