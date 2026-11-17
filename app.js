@@ -235,6 +235,8 @@ const modules = {
       ["data_contrato", "Data"],
       ["numero_processo_adm", "Processo"],
       ["descricao_objeto_contrato", "Objeto"],
+      ["nome_contratado_resultado", "Contratado"],
+      ["documento_contratado_resultado", "CNPJ/CPF contratado"],
       ["nome_fiscal_contrato", "Fiscal"],
       ["valor_total_contrato", "Valor"],
     ],
@@ -248,6 +250,7 @@ const modules = {
       ["data_nota_pagamento", "Data pagamento"],
       ["nome_negociante", "Credor"],
       ["numero_documento_negociante", "CNPJ/CPF"],
+      ["numero_contrato", "Contrato"],
       ["valor_pagamento_resultado", "Valor"],
       ["codigo_fonte_resultado", "Fonte"],
       ["nome_fonte_resultado", "Nome da fonte"],
@@ -735,6 +738,9 @@ async function runSearch(startIndex = Number(el.startIndex.value || 0)) {
     state.lastData = data;
     let rows = result.rows;
     state.rows = rows;
+    if (state.module === "contracts") {
+      state.rows = await enrichContractRows(state.rows);
+    }
     if (state.module === "expenses") {
       state.rows = await enrichExpenseRows(state.rows);
     }
@@ -1311,6 +1317,8 @@ async function enrichExpenseRows(rows) {
         tipo_fonte: row.tipo_fonte || empenho.tipo_fonte,
         codigo_fonte: row.codigo_fonte || empenho.codigo_fonte,
         cd_complem_fonte: row.cd_complem_fonte || empenho.cd_complem_fonte,
+        numero_contrato: row.numero_contrato || empenho.numero_contrato,
+        data_contrato: row.data_contrato || empenho.data_contrato,
       };
       return {
         ...merged,
@@ -1324,6 +1332,57 @@ async function enrichExpenseRows(rows) {
       ...row,
       numero_documento_negociante: formatCreditorDocument(row.numero_documento_negociante),
     }));
+  }
+}
+
+function contractJoinKey(row) {
+  return [
+    String(row.codigo_municipio || "").trim(),
+    String(row.numero_contrato || "").trim(),
+    String(row.data_contrato || "").slice(0, 10),
+  ].join("|");
+}
+
+async function enrichContractRows(rows) {
+  if (!rows.length || !el.municipality.value) return rows;
+  try {
+    setStatus("Completando contratados");
+    const contractors = [];
+    let startIndex = 0;
+    let hasNext = true;
+    while (hasNext) {
+      const url = new URL(`${API_BASE}/contratados`);
+      url.searchParams.set("$format", "json");
+      url.searchParams.set("$count", String(API_PAGE_LIMIT));
+      url.searchParams.set("$start_index", String(startIndex));
+      url.searchParams.set("codigo_municipio", el.municipality.value);
+      if (el.startDate.value) url.searchParams.set("data_inicio", toApiDate(el.startDate.value));
+      if (el.endDate.value) url.searchParams.set("data_fim", toApiDate(el.endDate.value));
+      const data = await fetchJson(url);
+      contractors.push(...(data.elements || []).map(normalizeRow));
+      hasNext = hasNextPage(data) && (data.elements || []).length > 0;
+      startIndex += API_PAGE_LIMIT;
+    }
+    const byKey = new Map();
+    for (const contractor of contractors) {
+      const key = contractJoinKey(contractor);
+      if (!byKey.has(key)) byKey.set(key, []);
+      byKey.get(key).push(contractor);
+    }
+    return rows.map((row) => {
+      const matches = byKey.get(contractJoinKey(row)) || [];
+      const names = [...new Set(matches.map((item) => item.nome_negociante).filter(Boolean))];
+      const documents = [
+        ...new Set(matches.map((item) => formatCreditorDocument(item.numero_documento_negociante)).filter(Boolean)),
+      ];
+      return {
+        ...row,
+        nome_contratado_resultado: names.join("; "),
+        documento_contratado_resultado: documents.join("; "),
+      };
+    });
+  } catch {
+    return rows;
   }
 }
 
@@ -1823,9 +1882,17 @@ function renderTableRows(columns) {
     for (const [key] of columns) {
       const cell = document.createElement("td");
       const value = rowData[key];
-      cell.textContent = displayValue(value, key);
+      const text = displayValue(value, key);
+      if (/objeto|historico|descricao/i.test(key)) {
+        const clamp = document.createElement("div");
+        clamp.className = "clamp";
+        clamp.textContent = text;
+        cell.title = text;
+        cell.append(clamp);
+      } else {
+        cell.textContent = text;
+      }
       if (/valor|preco|total|saldo|quantidade/i.test(key)) cell.classList.add("numeric");
-      if (/objeto|historico|descricao/i.test(key)) cell.classList.add("clamp");
       row.append(cell);
     }
     el.tableBody.append(row);
@@ -1950,8 +2017,8 @@ function renderNotice(message) {
 
 function openDetails(row) {
   const title =
-    row.numero_contrato ||
     row.numero_empenho ||
+    row.numero_contrato ||
     row.nome_servidor_resultado ||
     row.cpf_servidor_resultado ||
     row.numero_processo_adm ||
