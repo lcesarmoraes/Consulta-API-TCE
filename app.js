@@ -256,6 +256,17 @@ const modules = {
       ["nome_fonte_resultado", "Nome da fonte"],
       ["data_referencia_doc", "Referencia"],
     ],
+    extraColumns: [
+      ["numero_documento_despesa_extra", "Documento"],
+      ["data_emissao_despesa_extra", "Data"],
+      ["nome_negociante", "Credor"],
+      ["codigo_conta_extraorcamentaria", "Conta"],
+      ["nome_conta_extra_resultado", "Nome da conta"],
+      ["codigo_orgao", "Orgao"],
+      ["valor_documento_despesa_extra", "Valor"],
+      ["valor_deducao_despesa_extra", "Deducao"],
+      ["data_referencia_doc", "Referencia"],
+    ],
   },
   works: {
     label: "Obras",
@@ -324,6 +335,7 @@ const endpointLabels = {
   notas_pagamentos: "Notas de pagamentos",
   notas_fiscais: "Notas fiscais",
   itens_notas_fiscais: "Itens de notas fiscais",
+  despesas_extra_orcamentarias: "Despesas extraorcamentarias",
   obras_municipais_servicos_engenharia: "Obras e servicos",
   medicoes_obras_municipio: "Medicoes",
   status_obras_servico_engenharia: "Status",
@@ -571,7 +583,9 @@ function getColumns() {
             ? modules.bids.columns
             : getPayrollColumns();
   const existing = preferred.filter(([key]) => key in first);
-  if (state.module === "expenses") return preferred;
+  if (state.module === "expenses") {
+    return getActiveEndpoint() === "despesas_extra_orcamentarias" ? modules.expenses.extraColumns : preferred;
+  }
   if (state.module === "payroll" && existing.length >= 4) return existing;
   if (existing.length >= 3) return existing;
   return Object.keys(first)
@@ -1259,9 +1273,42 @@ function getPayrollValue(row) {
   );
 }
 
+async function enrichExtraBudgetRows(rows) {
+  const names = new Map();
+  try {
+    setStatus("Completando contas");
+    let startIndex = 0;
+    let hasNext = true;
+    while (hasNext) {
+      const url = new URL(`${API_BASE}/contas_extra_orcamentarias`);
+      url.searchParams.set("$format", "json");
+      url.searchParams.set("$count", String(API_PAGE_LIMIT));
+      url.searchParams.set("$start_index", String(startIndex));
+      url.searchParams.set("codigo_municipio", el.municipality.value);
+      url.searchParams.set("exercicio_orcamento", normalizeYear(el.fiscalYear.value));
+      const data = await fetchJson(url);
+      const elements = data.elements || [];
+      for (const account of elements) {
+        names.set(String(account.codigo_conta_extra_orc), repairText(account.descricao_conta_extra_orc || "").trim());
+      }
+      hasNext = hasNextPage(data) && elements.length > 0;
+      startIndex += API_PAGE_LIMIT;
+    }
+  } catch {
+    // sem a tabela de contas, segue mostrando so o codigo
+  }
+  return rows.map((row) => ({
+    ...row,
+    codigo_orgao: String(row.codigo_orgao || "").trim(),
+    nome_conta_extra_resultado: names.get(String(row.codigo_conta_extraorcamentaria)) || "",
+    valor_pagamento_resultado: getExpenseValue(row),
+  }));
+}
+
 async function enrichExpenseRows(rows) {
   if (!rows.length) return rows;
   const endpoint = getActiveEndpoint();
+  if (endpoint === "despesas_extra_orcamentarias") return enrichExtraBudgetRows(rows);
   const enriched = rows.map((row) => ({
     ...row,
     valor_pagamento_resultado: getExpenseValue(row),
